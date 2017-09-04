@@ -6,6 +6,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
+	"fmt"
 )
 
 type Book struct {
@@ -13,7 +14,22 @@ type Book struct {
 	Author string
 }
 
+
+var books []Book
+//var book *Book
+
 func main() {
+	book := Book{ "Egri csillagok", "Gárdonyi Géza"}
+	fmt.Println(book)
+
+	books = []Book{
+		Book{"Egri csillagok", "Gárdonyi Géza"}	,
+		Book{"Arany ember", "Jókai Mór"},
+		}
+
+//		{ }
+//	}
+
 	ws := new(restful.WebService)
 	ws.Path("/books")
 	ws.Consumes(restful.MIME_JSON, restful.MIME_XML)
@@ -31,6 +47,7 @@ func main() {
 		Doc("Add a new book").
 		Param(ws.PathParameter("medium", "digital or paperback").DataType("string")).
 		Reads(Book{}))
+
 
 	// You can install the Swagger Service which provides a nice Web UI on your REST API
 	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
