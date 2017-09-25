@@ -4,6 +4,8 @@ import (
 	//	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 func main() {
@@ -16,6 +18,8 @@ func main() {
 			db.Close()
 		}
 	}()
+	genesis := core.Genesis{Config: params.AllProtocolChanges, Alloc: alloc}
+	blockchain = core.NewBlockChain(db,)
 
 	it := db.NewIterator()
 	defer func() {

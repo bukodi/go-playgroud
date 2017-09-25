@@ -20,7 +20,7 @@ var books []Book
 
 func main() {
 	book := Book{"Egri csillagok", "Gárdonyi Géza"}
-	fmt.Println(book)
+	fmt.Printf("%#v\n", book)
 
 	books = []Book{
 		Book{"Egri csillagok", "Gárdonyi Géza"},
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	//		{ }
-	//	}Ö
+	//	}
 
 	ws := new(restful.WebService)
 	ws.Path("/books")
