@@ -2,17 +2,30 @@ package fileio
 
 import (
 	_ "crypto/sha1"
-	"fmt"
+	_ "fmt"
 	_ "io/ioutil"
 	"os"
-	"path/filepath"
+	_ "path/filepath"
 	"testing"
+	"crypto/x509"
+	"fmt"
 )
 
 var filesBySHA1 map[string]os.FileInfo
 
 func TestFileIO(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
 
+	os.Args = []string{"cmdName", "-db", "./cica"}
+
+	certPool, err := x509.SystemCertPool()
+	fmt.Println(err)
+	fmt.Println(certPool)
+
+	Main()
+
+	/*
 	list := make([]string, 5)
 	err := filepath.Walk("/opt/google/", func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
@@ -29,7 +42,7 @@ func TestFileIO(t *testing.T) {
 		fmt.Println(f)
 	}
 
-	fmt.Println("Hello")
+	fmt.Println("Hello") */
 }
 
 func processDir(name string) {
