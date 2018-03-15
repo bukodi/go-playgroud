@@ -9,6 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"path/filepath"
+	"fmt"
+	"github.com/bukodi/go-playgroud/swaggerui"
 )
 
 type Page struct {
@@ -58,7 +61,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+var templates *template.Template
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
@@ -80,10 +83,24 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
+func swaggeruiHandler(w http.ResponseWriter, r *http.Request) {
+	// r.URL.Path
+}
+
 func main() {
+
+	basePath,_ := filepath.Abs(".")
+	fmt.Println(basePath)
+
+	templates = template.Must(template.ParseFiles("httpsrv/edit.html", "httpsrv/view.html"))
+
+	fmt.Println(swaggerui.Asset("index.html"))
+
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
+	//http.Handle("/swagger-ui/", http.FileServer(assetFS()))
 
+	fmt.Println("Started on port ", 8080)
 	http.ListenAndServe(":8080", nil)
 }
