@@ -3,10 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
-
 	"fmt"
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful-swagger12"
+	"strings"
+	"github.com/bukodi/go-playgroud/swaggerui"
 )
 
 type Book struct {
@@ -53,7 +54,7 @@ func main() {
 	// Open http://localhost:8080/apidocs and enter http://localhost:8080/apidocs.json in the api input field.
 	config := swagger.Config{
 		WebServices:    restful.DefaultContainer.RegisteredWebServices(), // you control what services are visible
-		WebServicesUrl: "http://localhost:8080",
+//		WebServicesUrl: "http://localhost:8080",
 		ApiPath:        "/apidocs.json",
 
 		// Optionally, specify where the UI is located
@@ -62,6 +63,9 @@ func main() {
 	swagger.RegisterSwaggerService(config, restful.DefaultContainer)
 
 	log.Print("start listening on localhost:8080")
+
+	http.HandleFunc("/swagger-ui/", swaggeruiHandler)
+
 	server := &http.Server{Addr: ":8080", Handler: restful.DefaultContainer}
 	log.Fatal(server.ListenAndServe())
 }
@@ -75,3 +79,24 @@ func returns200(b *restful.RouteBuilder) {
 func returns500(b *restful.RouteBuilder) {
 	b.Returns(http.StatusInternalServerError, "Bummer, something went wrong", nil)
 }
+
+func swaggeruiHandler(w http.ResponseWriter, r *http.Request) {
+	if ! strings.HasPrefix( r.URL.Path, "/swagger-ui/") {
+		http.NotFound(w, r)
+		return
+	}
+
+	assetName := r.URL.Path[len( "/swagger-ui/"):]
+	bytes, err := swaggerui.Asset(assetName)
+	if err != nil  {
+		http.NotFound(w, r)
+		return
+	}
+	if strings.HasSuffix(assetName, ".css" ) {
+		w.Header().Set("Content-Type", "text/css")
+	}
+
+	w.Write(bytes)
+	//r.URL.Path
+}
+
