@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"fmt"
 	"github.com/emicklei/go-restful"
-	"github.com/emicklei/go-restful-swagger12"
+	openapi "github.com/emicklei/go-restful-openapi"
 	"strings"
 	"github.com/bukodi/go-playgroud/swaggerui"
+	//"github.com/emicklei/go-restful-swagger12"
 )
 
 type Book struct {
@@ -33,9 +34,9 @@ func main() {
 
 	ws := new(restful.WebService)
 	ws.Path("/books")
+	ws.Doc("Minden cica aranyos")
 	ws.Consumes(restful.MIME_JSON, restful.MIME_XML)
 	ws.Produces(restful.MIME_JSON, restful.MIME_XML)
-	restful.Add(ws)
 
 	ws.Route(ws.GET("/{medium}").To(noop).
 		Doc("Search all books").
@@ -49,18 +50,19 @@ func main() {
 		Param(ws.PathParameter("medium", "digital or paperback").DataType("string")).
 		Reads(Book{}))
 
+	restful.Add(ws)
+
+	fmt.Printf("%#v", ws)
+
 	// You can install the Swagger Service which provides a nice Web UI on your REST API
 	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
 	// Open http://localhost:8080/apidocs and enter http://localhost:8080/apidocs.json in the api input field.
-	config := swagger.Config{
+	config := openapi.Config{
 		WebServices:    restful.DefaultContainer.RegisteredWebServices(), // you control what services are visible
 //		WebServicesUrl: "http://localhost:8080",
-		ApiPath:        "/apidocs.json",
-
-		// Optionally, specify where the UI is located
-		SwaggerPath:     "/apidocs/",
-		SwaggerFilePath: "/Users/emicklei/xProjects/swagger-ui/dist"}
-	swagger.RegisterSwaggerService(config, restful.DefaultContainer)
+		APIPath:        "/apidocs.json",
+		}
+	restful.DefaultContainer.Add( openapi.NewOpenAPIService(config))
 
 	log.Print("start listening on localhost:8080")
 
