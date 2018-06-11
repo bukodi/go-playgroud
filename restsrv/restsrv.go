@@ -1,16 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
+	"strings"
+
+	"github.com/bukodi/go-playgroud/swaggerui"
 	"github.com/emicklei/go-restful"
 	openapi "github.com/emicklei/go-restful-openapi"
-	"strings"
-	"github.com/bukodi/go-playgroud/swaggerui"
-	//"github.com/emicklei/go-restful-swagger12"
+	// "github.com/emicklei/go-restful-swagger12"
 )
 
+// Book is an example entity
 type Book struct {
 	Title  string
 	Author string
@@ -58,14 +60,15 @@ func main() {
 	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
 	// Open http://localhost:8080/apidocs and enter http://localhost:8080/apidocs.json in the api input field.
 	config := openapi.Config{
-		WebServices:    restful.DefaultContainer.RegisteredWebServices(), // you control what services are visible
-//		WebServicesUrl: "http://localhost:8080",
-		APIPath:        "/apidocs.json",
-		}
-	restful.DefaultContainer.Add( openapi.NewOpenAPIService(config))
+		WebServices: restful.DefaultContainer.RegisteredWebServices(), // you control what services are visible
+		//		WebServicesUrl: "http://localhost:8080",
+		APIPath: "/apidocs.json",
+	}
+	restful.DefaultContainer.Add(openapi.NewOpenAPIService(config))
 
 	log.Print("start listening on localhost:8080")
 
+	http.Handle("/", http.FileServer(assetFS()))
 	http.HandleFunc("/swagger-ui/", swaggeruiHandler)
 
 	server := &http.Server{Addr: ":8080", Handler: restful.DefaultContainer}
@@ -83,22 +86,21 @@ func returns500(b *restful.RouteBuilder) {
 }
 
 func swaggeruiHandler(w http.ResponseWriter, r *http.Request) {
-	if ! strings.HasPrefix( r.URL.Path, "/swagger-ui/") {
+	if !strings.HasPrefix(r.URL.Path, "/swagger-ui/") {
 		http.NotFound(w, r)
 		return
 	}
 
-	assetName := r.URL.Path[len( "/swagger-ui/"):]
+	assetName := r.URL.Path[len("/swagger-ui/"):]
 	bytes, err := swaggerui.Asset(assetName)
-	if err != nil  {
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	if strings.HasSuffix(assetName, ".css" ) {
+	if strings.HasSuffix(assetName, ".css") {
 		w.Header().Set("Content-Type", "text/css")
 	}
 
 	w.Write(bytes)
 	//r.URL.Path
 }
-
