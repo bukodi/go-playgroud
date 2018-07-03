@@ -14,17 +14,20 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"sync"
 	"text/template"
 	"time"
 
 	"github.com/fullsailor/pkcs7"
 )
 
-var n = flag.Int("n", 1000, "Number of test files")
+var n = flag.Int("n", 10, "Number of test files")
 var srcDir = flag.String("src", "/tmp/in", "Input directory")
 var dstDir = flag.String("dst", "/tmp/out", "Output directory")
+var saveFiles = flag.Bool("saveFiles", false, "Save the files or use only in memory")
 
 var cert certKeyPair
+var wg sync.WaitGroup
 
 func main() {
 	start := time.Now()
@@ -36,20 +39,30 @@ func main() {
 
 	cert, _ = createTestCertificate()
 
+	wg.Add(*n)
 	for i := 0; i < *n; i++ {
-		data := createTestFile(i)
-		signature := signData(data)
-		err := ioutil.WriteFile(*srcDir+"/data"+strconv.Itoa(i)+".xml", data, 0644)
+		go createAndProcessFile(i)
+	}
+	wg.Wait()
+	elapsed := time.Since(start)
+	fmt.Printf("Done. Elapsed time: %s \n", elapsed)
+}
+
+func createAndProcessFile(index int) {
+	defer wg.Done()
+	data := createTestFile(index)
+	signature := signData(data)
+	if *saveFiles {
+		err := ioutil.WriteFile(*srcDir+"/data"+strconv.Itoa(index)+".xml", data, 0644)
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(*srcDir+"/data"+strconv.Itoa(i)+".sig", signature, 0644)
+		err = ioutil.WriteFile(*srcDir+"/data"+strconv.Itoa(index)+".sig", signature, 0644)
 		if err != nil {
 			panic(err)
 		}
 	}
-	elapsed := time.Since(start)
-	fmt.Printf("Done. Elapsed time: %s", elapsed)
+
 }
 
 func signData(data []byte) (signature []byte) {
