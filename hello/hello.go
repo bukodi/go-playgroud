@@ -20,7 +20,7 @@ func main() {
 
 	var ia5 *[5]int
 	ia5 = new([5]int)
-	fmt.Print(ia5);
+	fmt.Print(ia5)
 
 	var s1 struct {
 		v1 int

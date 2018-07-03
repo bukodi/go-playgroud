@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-
 // Generate a self-signed X.509 certificate for a TLS server. Outputs to
 // 'cert.pem' and 'key.pem' and will overwrite existing files.
 
 package main
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -35,7 +35,7 @@ var (
 	ecdsaCurve = flag.String("ecdsa-curve", "", "ECDSA curve to use to generate a key. Valid values are P224, P256 (recommended), P384, P521")
 )
 
-func publicKey(priv interface{}) interface{} {
+func publicKey(priv crypto.PrivateKey) crypto.PublicKey {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
 		return &k.PublicKey
@@ -46,7 +46,7 @@ func publicKey(priv interface{}) interface{} {
 	}
 }
 
-func pemBlockForKey(priv interface{}) *pem.Block {
+func pemBlockForKey(priv crypto.PrivateKey) *pem.Block {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
 		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}
@@ -65,11 +65,15 @@ func pemBlockForKey(priv interface{}) *pem.Block {
 func main() {
 	flag.Parse()
 
+	x := "localhost"
+
+	host = &x
+
 	if len(*host) == 0 {
 		log.Fatalf("Missing required --host parameter")
 	}
 
-	var priv interface{}
+	var priv crypto.PrivateKey
 	var err error
 	switch *ecdsaCurve {
 	case "":
