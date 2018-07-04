@@ -79,7 +79,7 @@ func signData(data []byte) (signature []byte) {
 
 	// Call Detach() is you want to remove content from the signature
 	// and generate an S/MIME detached signature
-	signedData.Detach()
+	//signedData.Detach()
 
 	// Finish() to obtain the signature bytes
 	detachedSignature, err := signedData.Finish()
@@ -89,6 +89,10 @@ func signData(data []byte) (signature []byte) {
 	var sigBuff bytes.Buffer
 	pem.Encode(&sigBuff, &pem.Block{Type: "PKCS7", Bytes: detachedSignature})
 	return sigBuff.Bytes()
+}
+
+func verifySignature(data []byte, signature []byte) error {
+	return nil
 }
 
 type certKeyPair struct {
