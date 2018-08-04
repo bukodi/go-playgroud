@@ -1,2 +1,4 @@
 {
+    "powermode.enabled": true,
+    "powermode.enableShake": false,
 }
