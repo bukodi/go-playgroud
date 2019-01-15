@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 	"testing"
 )
@@ -13,17 +14,21 @@ import (
 func TestOutputPipe(t *testing.T) {
 
 	// Create named pipe
-	keyOutPipe := "/tmp/0814/test.key"
+	keyOutPipe := "/tmp/test.key"
 	syscall.Mkfifo(keyOutPipe, 0600)
 	defer os.Remove(keyOutPipe)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		cmd := exec.Command("openssl", "genrsa", "-out", keyOutPipe, "2048")
+		cmd := exec.Command("openssl", "genrsa", "2048")
 		// Just to forward the stdout
 		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		cmd.Run()
+		wg.Done()
 	}()
-
+	wg.Wait()
 	// Open named pipe for reading
 	fmt.Println("Opening named pipe for reading")
 	keyOutFile, _ := os.OpenFile(keyOutPipe, os.O_RDONLY, 0600)
@@ -46,6 +51,8 @@ func TestInputPipe(t *testing.T) {
 	defer os.Remove(keyInPipe)
 	defer os.Remove(certOutPipe)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		cmd := exec.Command("openssl", "req",
 			"-x509", "-new", "-nodes",
@@ -55,9 +62,15 @@ func TestInputPipe(t *testing.T) {
 			"-subj", "/C=GB/CN=foo")
 		// Just to forward the stdout
 		cmd.Stdout = os.Stdout
-		cmd.Run()
+		err := cmd.Run()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("No error")
+		}
+		wg.Done()
 	}()
-
+	wg.Wait()
 	// Open named pipe for reading
 	fmt.Println("Writing key to openssl")
 	keyInBuff := bytes.NewBufferString(testKey)
