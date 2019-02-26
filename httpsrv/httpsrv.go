@@ -5,17 +5,18 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"html/template"
 	"io/ioutil"
-	"net/http"
-	"regexp"
-	"path/filepath"
-	"fmt"
-	"github.com/bukodi/go-playgroud/swaggerui"
-	"strings"
-	"crypto/tls"
-	"net"
 	"log"
+	"net"
+	"net/http"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"github.com/bukodi/go-playgroud/swaggerui"
 )
 
 type Page struct {
@@ -88,18 +89,18 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func swaggeruiHandler(w http.ResponseWriter, r *http.Request) {
-	if ! strings.HasPrefix( r.URL.Path, "/swagger-ui/") {
+	if !strings.HasPrefix(r.URL.Path, "/swagger-ui/") {
 		http.NotFound(w, r)
 		return
 	}
 
-	assetName := r.URL.Path[len( "/swagger-ui/"):]
+	assetName := r.URL.Path[len("/swagger-ui/"):]
 	bytes, err := swaggerui.Asset(assetName)
-	if err != nil  {
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	if strings.HasSuffix(assetName, ".css" ) {
+	if strings.HasSuffix(assetName, ".css") {
 		w.Header().Set("Content-Type", "text/css")
 	}
 
@@ -156,10 +157,10 @@ b1ARF33V/sYZ9TAcR2RfXEEVps4TAU2yYsY3a6EhdBr7Osrumk0aBA==
 
 func main() {
 
-	basePath,_ := filepath.Abs(".")
+	basePath, _ := filepath.Abs(".")
 	fmt.Println(basePath)
 
-	templates = template.Must(template.ParseFiles("httpsrv/edit.html", "httpsrv/view.html"))
+	templates = template.Must(template.ParseFiles("edit.html", "view.html"))
 
 	fmt.Println(swaggerui.Asset("index.html"))
 
@@ -170,14 +171,14 @@ func main() {
 
 	fmt.Println("Started on port ", 8080)
 
-	server := &http.Server{Addr: ":1443", Handler: nil}
+	server := &http.Server{Addr: ":10443", Handler: nil}
 
-	cer, err := tls.X509KeyPair(certPem,keyPem)
+	cer, err := tls.X509KeyPair(certPem, keyPem)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	tlsCfg := &tls.Config {Certificates: []tls.Certificate{cer}}
+	tlsCfg := &tls.Config{Certificates: []tls.Certificate{cer}}
 
 	conn, err := net.Listen("tcp", server.Addr)
 	if err != nil {
