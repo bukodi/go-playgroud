@@ -1,14 +1,19 @@
 package certutil
 
 import (
+	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"github.com/fullsailor/pkcs7"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 )
@@ -167,4 +172,74 @@ func ImportProtectedData(p7PEM string, wrappingCertPEM string, wrappingPrivKey *
 		return nil, err
 	}
 	return data, nil
+}
+
+func TestCalcHash(t *testing.T) {
+	sum := sha256.Sum256([]byte("Minden cica aranyos."))
+	fmt.Printf("% x", sum)
+}
+
+func TestParseM5StickKey(t *testing.T) {
+	m5KeyPEM := `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIC30UVjPjLFARva1SykxA0cEW3AwtF39IHh/ixrYWSlQoAoGCCqGSM49
+AwEHoUQDQgAEoopFL6hGLB+Z9NdmU32JtpTE2lawJpIBGK6ouNXURAujeC8ctyQr
+DnN1VtqjyszqkxeDSdR8Bi5NXN7eGsX1dw==
+-----END EC PRIVATE KEY-----`
+
+	m5KeyParsedPEM, _ := pem.Decode([]byte(m5KeyPEM))
+	ecPrivKey, err := x509.ParseECPrivateKey(m5KeyParsedPEM.Bytes)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("%#v", ecPrivKey)
+
+}
+
+func TestVerifyM5Sign(t *testing.T) {
+	m5PubPEM := `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWCB6hjZmL00xCFLwuGq+hs7+TL+X
+2TcTzQ3oam2a09P0+I98Ni43nj3hSsukWjb6ypb/rnaRYMueBsVaGmgeyg==
+-----END PUBLIC KEY-----`
+
+	m5PubParsedPEM, _ := pem.Decode([]byte(m5PubPEM))
+	pubKey, err := x509.ParsePKIXPublicKey(m5PubParsedPEM.Bytes)
+	if err != nil {
+		t.Error(err)
+	}
+	ecPubKey := pubKey.(*ecdsa.PublicKey)
+	fmt.Printf("PubKey:\n%#v\n", ecPubKey)
+	sum := sha256.Sum256(m5PubParsedPEM.Bytes)
+	fmt.Printf("Pubkey hash:% 02X", sum)
+
+	hashHex := "28 1A E7 AD 03 E6 0E F5 BE 96 10 CA 8A 79 FB 26 60 13 2A EA D4 B1 2F 3F 18 03 4C B0 AD D1 08 2A"
+	hashHex = strings.Replace(hashHex, " ", "", -1)
+	hash, err := hex.DecodeString(hashHex)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signHex := "30 45 02 21 00 C6 EB 42 FA BF 70 DB 2A 03 C0 B7 D2 E9 E5 72 D9 F2 75 BE 54 EA 29 20 C1 5D 5B 3D 47 A2 80 D7 D5 02 20 37 14 C6 10 4A 29 8F FF 47 CF 9F F6 64 ED 07 A2 18 A4 BD 40 AA E2 A1 24 4E 17 A3 06 65 22 BC 90"
+	signHex = strings.Replace(signHex, " ", "", -1)
+	sign, err := hex.DecodeString(signHex)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type SigData struct {
+		R big.Int
+		S big.Int
+	}
+	var sigData []*big.Int
+	_, err = asn1.Unmarshal(sign, &sigData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	isOk := ecdsa.Verify(ecPubKey, hash, sigData[0], sigData[1])
+	if isOk {
+		t.Log("Ok")
+	} else {
+		t.Log("Fail")
+	}
+
 }

@@ -50,7 +50,6 @@ func TestYaml(t *testing.T) {
 			Port:    8088,
 		},
 	}
-aa
 	fmt.Printf("%#v\n", cfg)
 	cfgTxt, _ := yaml.Marshal(cfg)
 	fmt.Printf("%s\n", cfgTxt)

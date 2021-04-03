@@ -19,7 +19,7 @@ func TestGORMSqlite(t *testing.T) {
 	//db, _ := gorm.Open("sqlite3", ":memory:")
 	defer db.Close()
 
-	x := db.AutoMigrate(&Table1{})
+	db.AutoMigrate(&Table1{})
 
 	//row1 := Table1{Name: "Kica"}
 	//db.Create(&row1)

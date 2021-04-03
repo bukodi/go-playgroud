@@ -41,6 +41,8 @@ func TestUserInheritance(t *testing.T) {
 
 func TestUserCRUD(t *testing.T) {
 
+	t.Log("Starting test")
+
 	os.Remove("test.db")
 	db, err := gorm.Open("sqlite3", "test.db")
 	if err != nil {
@@ -48,7 +50,7 @@ func TestUserCRUD(t *testing.T) {
 	}
 	defer db.Close()
 
-	db.LogMode(false)
+	db.LogMode(true)
 	db.AutoMigrate(&User{})
 
 	err = dbpkg.DoInTransaction(context.Background(), db, func(ctx context.Context) error {
@@ -61,7 +63,7 @@ func TestUserCRUD(t *testing.T) {
 		if err := u1.Create(ctx); err != nil {
 			t.Error(err)
 		}
-		t.Logf("User1 created: %v", u1)
+		t.Logf("User1 created: %#v", u1)
 
 		tx := dbpkg.CurrentDB(ctx)
 		var u2 User
@@ -72,7 +74,7 @@ func TestUserCRUD(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		t.Logf("List of users: : %v", users)
+		t.Logf("List of users: : %#v", users)
 
 		return nil
 	})

@@ -256,7 +256,7 @@ func TestVideoInfo(t *testing.T) {
 	//cmd := exec.Command("/usr/bin/mplayer", "-noidle", "-nogui", "-nosound", "-vo", "jpeg",
 	//	"-frames", "5", "-sstep", "600", path)
 	//	cmd.Dir = "/home/bukodi/Downloads/Rogue.One.2016.RETAiL.BDRiP.x264.HuN-HyperX/sample/"
-	cmd.Dir = "/tmp/Arduino/"
+	cmd.Dir = "/tmp/"
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -274,7 +274,7 @@ func TestSMPlayerHash(t *testing.T) {
 
 func TestMultipleSMPlayerHash(t *testing.T) {
 	//baseDir := "/home/bukodi/Downloads/CSENGETETT,MYLORD;;1.2.3.ÉVAD/"
-	baseDir := "/media/bukodi/DATA/DATA/installData/20170818/"
+	baseDir := "/media/bukodi/DATA3GB_A/InstallTest/20180811/"
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if !suppordedExts[ext] {
@@ -308,6 +308,7 @@ func smplayerHash(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 
 	_, err = f.Read(buff)
 	if err != nil {
@@ -331,5 +332,5 @@ func smplayerHash(path string) (string, error) {
 		a = binary.LittleEndian.Uint64(buff[i*8:])
 		hash += a
 	}
-	return fmt.Sprintf("%x", hash), nil
+	return fmt.Sprintf("%0.16x", hash), nil
 }
