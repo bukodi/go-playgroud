@@ -23,7 +23,7 @@ type Address struct {
 	Street string
 }
 
-func TestSigleEntity(t *testing.T) {
+func TestSingleEntity(t *testing.T) {
 	os.Remove("test.db")
 	db, err := gorm.Open("sqlite3", "test.db")
 	if err != nil {
