@@ -51,14 +51,14 @@ func TestWriteKDB(t *testing.T) {
 	rootGroup.Groups = append(rootGroup.Groups, subGroup)
 
 	// now create the database containing the root group
-	db := &gokeepasslib.Database{
-		Header:      gokeepasslib.NewHeader(),
-		Credentials: gokeepasslib.NewPasswordCredentials(masterPassword),
-		Content: &gokeepasslib.DBContent{
-			Meta: gokeepasslib.NewMetaData(),
-			Root: &gokeepasslib.RootData{
-				Groups: []gokeepasslib.Group{rootGroup},
-			},
+	db := gokeepasslib.NewDatabase()
+	db.Credentials = gokeepasslib.NewPasswordCredentials(masterPassword)
+	_ = gokeepasslib.NewDecoder(file).Decode(db)
+
+	db.Content = &gokeepasslib.DBContent{
+		Meta: gokeepasslib.NewMetaData(),
+		Root: &gokeepasslib.RootData{
+			Groups: []gokeepasslib.Group{rootGroup},
 		},
 	}
 

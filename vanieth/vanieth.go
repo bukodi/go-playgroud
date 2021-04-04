@@ -59,7 +59,7 @@ func main() {
 	//	toMatch = os.Args[1]
 	//	// errWrongMatch(toMatch)
 	//}
-	toMatch = "020"
+	toMatch = "0200"
 
 	for true {
 		go addrGen(toMatch)
