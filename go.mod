@@ -3,6 +3,7 @@ module github.com/bukodi/go-playground
 go 1.16
 
 require (
+	github.com/InfiniteLoopSpace/go_S-MIME v0.0.0-20181221134359-3f58f9a4b2b6
 	github.com/Microsoft/go-winio v0.4.16
 	github.com/alexbrainman/gowingui v0.0.0-20150821051340-e3c149ab88a2
 	github.com/alexbrainman/sspi v0.0.0-20210105120005-909beea2cc74
