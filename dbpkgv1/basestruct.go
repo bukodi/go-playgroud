@@ -1,4 +1,4 @@
-package dbpkg
+package dbpkgv1
 
 import (
 	"crypto/sha256"

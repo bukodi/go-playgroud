@@ -7,11 +7,11 @@ import (
 	"net/http"
 )
 
-//go:embed ui/dist
+//go:embed _ui/dist
 var uiDist embed.FS
 
 func getFileSystem() http.FileSystem {
-	fsys, err := fs.Sub(uiDist, "ui/dist")
+	fsys, err := fs.Sub(uiDist, "_ui/dist")
 	if err != nil {
 		log.Fatal(err)
 	}
