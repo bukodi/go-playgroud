@@ -7,12 +7,60 @@ import (
 	"time"
 )
 
-func TestAsyncGreeterImpl_SayMultiLangHello(t *testing.T) {
-	asyncImpl := AsyncGreeterImpl{delay: time.Millisecond * 400}
+var asyncImpl AsyncGreeter = AsyncGreeterImpl{delay: time.Millisecond * 100}
 
+func TestAsyncSayHello(t *testing.T) {
+	t.Run("AsyncGreeterImpl", func(t *testing.T) {
+		testAsyncSayHello(t, asyncImpl)
+	})
+	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
+	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
+		testAsyncSayHello(t, wrappedSync)
+	})
+}
+func testAsyncSayHello(t *testing.T, impl AsyncGreeter) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	expectedMsg, _ := generateHello("Alice", "en")
+	msg := <-impl.SayHello(ctx, "Alice")
+	if expectedMsg != msg {
+		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
+	}
+}
+
+func TestAsyncSayHelloWithTimeout(t *testing.T) {
+	t.Run("AsyncGreeterImpl", func(t *testing.T) {
+		testAsyncSayHelloWithTimeout(t, asyncImpl)
+	})
+	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
+	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
+		testAsyncSayHelloWithTimeout(t, wrappedSync)
+	})
+}
+
+func testAsyncSayHelloWithTimeout(t *testing.T, impl AsyncGreeter) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+	defer cancel()
+	expectedMsg := ""
+	msg := <-impl.SayHello(ctx, "Alice")
+	if expectedMsg != msg {
+		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
+	}
+}
+func TestAsyncSayMultiLangHello(t *testing.T) {
+	t.Run("AsyncGreeterImpl", func(t *testing.T) {
+		testAsyncSayMultiLangHello(t, asyncImpl)
+	})
+	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
+	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
+		testAsyncSayMultiLangHello(t, wrappedSync)
+	})
+}
+
+func testAsyncSayMultiLangHello(t *testing.T, impl AsyncGreeter) {
 	var wg sync.WaitGroup
 	langCh := make(chan string)
-	msgCh, errCh := asyncImpl.SayMultiLangHello(context.Background(), "Alice", langCh)
+	msgCh, errCh := impl.SayMultiLangHello(context.Background(), "Alice", langCh)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

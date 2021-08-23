@@ -4,16 +4,6 @@ import (
 	"time"
 )
 
-type Greeter interface {
-	// This is the simples use case
-	SayHello(name string) (greeting string)
-
-	SayLocalHello(name string, lang string) (greeting string, err error)
-
-	// Response is a stream
-	SayMultiLangHello(name string, langs ...string) (greetings []string, errs []error)
-}
-
 type SyncGreeterImpl struct {
 	delay time.Duration
 }
@@ -21,20 +11,20 @@ type SyncGreeterImpl struct {
 var _ Greeter = &SyncGreeterImpl{}
 
 func (g SyncGreeterImpl) SayHello(name string) (greeting string) {
-	message, _ := g.SayLocalHello(name, "en")
+	message, _ := g.SayLocaleHello(name, "en")
 	return message
 }
 
-func (g SyncGreeterImpl) SayLocalHello(name string, lang string) (greeting string, err error) {
+func (g SyncGreeterImpl) SayLocaleHello(name string, lang string) (greeting string, err error) {
 	time.Sleep(g.delay)
-	return generateLocalHello(name, lang)
+	return generateHello(name, lang)
 }
 
 func (g SyncGreeterImpl) SayMultiLangHello(name string, langs ...string) (greetings []string, errs []error) {
 	greetings = make([]string, 0)
 	errs = make([]error, 0)
 	for _, lang := range langs {
-		msg, err := g.SayLocalHello(name, lang)
+		msg, err := g.SayLocaleHello(name, lang)
 		if err != nil {
 			errs = append(errs, err)
 		} else {

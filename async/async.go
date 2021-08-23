@@ -5,20 +5,11 @@ import (
 	"time"
 )
 
-type AsyncGreeter interface {
-	// This is the simples use case
-	SayHello(ctx context.Context, name string) (greetingCh <-chan string)
-
-	// This is the simples use case
-	SayLocalHello(ctx context.Context, name string, lang string) (greetingCh <-chan string, errCh <-chan error)
-
-	// Response is a stream
-	SayMultiLangHello(ctx context.Context, name string, langCh <-chan string) (greetingsCh <-chan string, err <-chan error)
-}
-
 type AsyncGreeterImpl struct {
 	delay time.Duration
 }
+
+var _ AsyncGreeter = &AsyncGreeterImpl{}
 
 func (a AsyncGreeterImpl) SayHello(ctx context.Context, name string) <-chan string {
 	greetingCh := make(chan string)
@@ -29,18 +20,18 @@ func (a AsyncGreeterImpl) SayHello(ctx context.Context, name string) <-chan stri
 			return
 		case <-time.After(a.delay):
 		}
-		msg, _ := generateLocalHello(name, "en")
+		msg, _ := generateHello(name, "en")
 		greetingCh <- msg
 	}()
 	return greetingCh
 }
 
-func (a AsyncGreeterImpl) SayLocalHello(ctx context.Context, name string, lang string) (<-chan string, <-chan error) {
+func (a AsyncGreeterImpl) SayLocaleHello(ctx context.Context, name string, lang string) (<-chan string, <-chan error) {
 	greetingCh := make(chan string)
 	errCh := make(chan error)
 	go func() {
-		close(greetingCh)
-		close(errCh)
+		defer close(greetingCh)
+		defer close(errCh)
 
 		select {
 		case <-ctx.Done():
@@ -49,7 +40,7 @@ func (a AsyncGreeterImpl) SayLocalHello(ctx context.Context, name string, lang s
 		case <-time.After(a.delay):
 		}
 
-		msg, err := generateLocalHello(name, lang)
+		msg, err := generateHello(name, lang)
 		if err != nil {
 			errCh <- err
 		} else {
@@ -75,7 +66,7 @@ func (a AsyncGreeterImpl) SayMultiLangHello(ctx context.Context, name string, la
 				if !ok {
 					break loop
 				}
-				msg, err := generateLocalHello(name, lang)
+				msg, err := generateHello(name, lang)
 				if err != nil {
 					errCh <- err
 				} else {
@@ -86,5 +77,3 @@ func (a AsyncGreeterImpl) SayMultiLangHello(ctx context.Context, name string, la
 	}()
 	return greetingCh, errCh
 }
-
-var _ AsyncGreeter = &AsyncGreeterImpl{}
