@@ -4,9 +4,8 @@ import (
 	"context"
 )
 
-func WrapToAsyncGreeter(ctx context.Context, syncGreeter Greeter) AsyncGreeter {
+func WrapToAsyncGreeter(syncGreeter Greeter) AsyncGreeter {
 	wrapper := syncToAsync{
-		ctx:  ctx,
 		impl: syncGreeter,
 	}
 	return &wrapper
@@ -16,11 +15,10 @@ var _ AsyncGreeter = &syncToAsync{}
 
 type syncToAsync struct {
 	impl Greeter
-	ctx  context.Context
 }
 
 func (w syncToAsync) SayHello(ctx context.Context, name string) <-chan string {
-	internalCh := make(chan string)
+	internalCh := make(chan string, 1)
 	go func() {
 		defer close(internalCh)
 		internalCh <- w.impl.SayHello(name)
@@ -39,8 +37,8 @@ func (w syncToAsync) SayHello(ctx context.Context, name string) <-chan string {
 }
 
 func (w syncToAsync) SayLocaleHello(ctx context.Context, name string, lang string) (<-chan string, <-chan error) {
-	internalMsgCh := make(chan string)
-	internalErrCh := make(chan error)
+	internalMsgCh := make(chan string, 1)
+	internalErrCh := make(chan error, 1)
 	go func() {
 		defer close(internalMsgCh)
 		defer close(internalErrCh)
@@ -80,8 +78,8 @@ func (w syncToAsync) SayLocaleHello(ctx context.Context, name string, lang strin
 }
 
 func (w syncToAsync) SayMultiLangHello(ctx context.Context, name string, langCh <-chan string) (<-chan string, <-chan error) {
-	internalMsgCh := make(chan string)
-	internalErrCh := make(chan error)
+	internalMsgCh := make(chan string, 1)
+	internalErrCh := make(chan error, 1) // TODO investigate what happens if this were an unbuffered channel
 	go func() {
 		defer close(internalMsgCh)
 		defer close(internalErrCh)

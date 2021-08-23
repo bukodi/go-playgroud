@@ -2,23 +2,21 @@ package main
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
 )
 
 var asyncImpl AsyncGreeter = AsyncGreeterImpl{delay: time.Millisecond * 100}
+var wrappedSync AsyncGreeter = WrapToAsyncGreeter(SyncGreeterImpl{delay: time.Millisecond * 100})
 
-func TestAsyncSayHello(t *testing.T) {
-	t.Run("AsyncGreeterImpl", func(t *testing.T) {
-		testAsyncSayHello(t, asyncImpl)
-	})
-	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
-	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
-		testAsyncSayHello(t, wrappedSync)
-	})
-}
+func TestAsyncSayHello(t *testing.T)       { testAsyncSayHello(t, asyncImpl) }
+func TestWrappedSyncSayHello(t *testing.T) { testAsyncSayHello(t, wrappedSync) }
+
 func testAsyncSayHello(t *testing.T, impl AsyncGreeter) {
+	defer checkGoroutineLeakage(t, runtime.NumGoroutine())
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	expectedMsg, _ := generateHello("Alice", "en")
@@ -27,18 +25,12 @@ func testAsyncSayHello(t *testing.T, impl AsyncGreeter) {
 		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
 	}
 }
-
-func TestAsyncSayHelloWithTimeout(t *testing.T) {
-	t.Run("AsyncGreeterImpl", func(t *testing.T) {
-		testAsyncSayHelloWithTimeout(t, asyncImpl)
-	})
-	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
-	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
-		testAsyncSayHelloWithTimeout(t, wrappedSync)
-	})
-}
+func TestAsyncSayHelloWithTimeout(t *testing.T)       { testAsyncSayHelloWithTimeout(t, asyncImpl) }
+func TestWrappedSyncSayHelloWithTimeout(t *testing.T) { testAsyncSayHelloWithTimeout(t, wrappedSync) }
 
 func testAsyncSayHelloWithTimeout(t *testing.T, impl AsyncGreeter) {
+	defer checkGoroutineLeakage(t, runtime.NumGoroutine())
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
 	defer cancel()
 	expectedMsg := ""
@@ -47,17 +39,12 @@ func testAsyncSayHelloWithTimeout(t *testing.T, impl AsyncGreeter) {
 		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
 	}
 }
-func TestAsyncSayMultiLangHello(t *testing.T) {
-	t.Run("AsyncGreeterImpl", func(t *testing.T) {
-		testAsyncSayMultiLangHello(t, asyncImpl)
-	})
-	wrappedSync := WrapToAsyncGreeter(context.Background(), SyncGreeterImpl{delay: time.Millisecond * 100})
-	t.Run("WrapToAsyncGreeter", func(t *testing.T) {
-		testAsyncSayMultiLangHello(t, wrappedSync)
-	})
-}
+func TestAsyncSayMultiLangHello(t *testing.T)       { testAsyncSayMultiLangHello(t, asyncImpl) }
+func TestWrappedSyncSayMultiLangHello(t *testing.T) { testAsyncSayMultiLangHello(t, wrappedSync) }
 
 func testAsyncSayMultiLangHello(t *testing.T, impl AsyncGreeter) {
+	defer checkGoroutineLeakage(t, runtime.NumGoroutine())
+
 	var wg sync.WaitGroup
 	langCh := make(chan string)
 	msgCh, errCh := impl.SayMultiLangHello(context.Background(), "Alice", langCh)
@@ -90,5 +77,7 @@ func testAsyncSayMultiLangHello(t *testing.T, impl AsyncGreeter) {
 
 	wg.Wait()
 	t.Log("Completed")
+
+	//checkGoroutineLeakage(t, init)
 
 }

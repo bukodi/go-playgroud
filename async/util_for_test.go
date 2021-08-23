@@ -1,8 +1,10 @@
 package main
 
 import (
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 type testCase struct {
@@ -76,4 +78,21 @@ func errEquals(err1, err2 error) bool {
 		return true
 	}
 	return false
+}
+
+func checkGoroutineLeakage(t *testing.T, initNum int) {
+	runtime.Gosched()
+	actualNum := runtime.NumGoroutine()
+	if actualNum == initNum {
+		return
+	}
+
+	// Wait for sync calls completes
+	time.Sleep(time.Millisecond * 100)
+	runtime.Gosched()
+
+	actualNum = runtime.NumGoroutine()
+	if actualNum > initNum {
+		t.Errorf("Probably goroutine leakage.")
+	}
 }
