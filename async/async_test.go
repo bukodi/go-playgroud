@@ -25,6 +25,7 @@ func testAsyncSayHello(t *testing.T, impl AsyncGreeter) {
 		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
 	}
 }
+
 func TestAsyncSayHelloWithTimeout(t *testing.T)       { testAsyncSayHelloWithTimeout(t, asyncImpl) }
 func TestWrappedSyncSayHelloWithTimeout(t *testing.T) { testAsyncSayHelloWithTimeout(t, wrappedSync) }
 
@@ -39,6 +40,39 @@ func testAsyncSayHelloWithTimeout(t *testing.T, impl AsyncGreeter) {
 		t.Errorf("actual: %v, expected: %v", msg, expectedMsg)
 	}
 }
+
+func TestAsyncSayLocaleHello(t *testing.T)       { testAsyncSayLocaleHello(t, asyncImpl) }
+func TestWrappedSyncSayLocaleHello(t *testing.T) { testAsyncSayLocaleHello(t, wrappedSync) }
+
+func testAsyncSayLocaleHello(t *testing.T, impl AsyncGreeter) {
+	defer checkGoroutineLeakage(t, runtime.NumGoroutine())
+
+	langs := []string{"en", "de", "xx", "fr", "hu", "yy"}
+	for _, lang := range langs {
+		t.Run(lang, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			expectedMsg, expectedErr := generateHello("Alice", lang)
+			actualMsg := ""
+			var actualErr error = nil
+			msgCh, errCh := impl.SayLocaleHello(ctx, "Alice", lang)
+			select {
+			case msg := <-msgCh:
+				actualMsg = msg
+			case err := <-errCh:
+				actualErr = err
+			}
+			if !errEquals(actualErr, expectedErr) {
+				t.Errorf("SayLocaleHello() error = %v, wantErr %v", actualErr, expectedErr)
+
+			} else if actualMsg != expectedMsg {
+				t.Errorf("SayLocaleHello() gotGreeting = %v, want %v", actualMsg, expectedErr)
+			}
+		})
+	}
+}
+
 func TestAsyncSayMultiLangHello(t *testing.T)       { testAsyncSayMultiLangHello(t, asyncImpl) }
 func TestWrappedSyncSayMultiLangHello(t *testing.T) { testAsyncSayMultiLangHello(t, wrappedSync) }
 
