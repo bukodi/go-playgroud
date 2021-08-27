@@ -10,6 +10,8 @@ require (
 	github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e
 	github.com/bukodi/go-playgroud v0.0.0-20210403211403-88928ed6657c
 	github.com/disintegration/imaging v1.6.2
+	github.com/duo-labs/webauthn v0.0.0-20210727191636-9f1b88ef44cc
+	github.com/duo-labs/webauthn.io v0.0.0-20200929144140-c031a3e0f95d
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/emicklei/go-restful v2.15.0+incompatible

@@ -103,7 +103,7 @@ func main() {
 
 	acmeClient := acme.Client{
 		//DirectoryURL: "https://acme.api.letsencrypt.org/directory",
-		DirectoryURL: "https://acme-staging.api.letsencrypt.org/directory",
+		DirectoryURL: "https://acme-staging-v02.api.letsencrypt.org/directory",
 		//DirectoryURL: "https://acme-staging-v02.api.letsencrypt.org/directory",
 		Key: mySSLKey,
 	}
@@ -111,7 +111,7 @@ func main() {
 	certManager := autocert.Manager{
 		Client:     &acmeClient,
 		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist("bukodi.ddns.net"), //Your domain here
+		HostPolicy: autocert.HostWhitelist("bukodi.duckdns.org"), //Your domain here
 		//Cache:      autocert.DirCache("/tmp/certs6"),          //Folder for storing certificates
 	}
 
