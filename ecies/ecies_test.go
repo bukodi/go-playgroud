@@ -2,6 +2,7 @@ package ecies
 
 import (
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"io"
@@ -12,7 +13,7 @@ import (
 // Based on this description:
 // https://medium.com/asecuritysite-when-bob-met-alice/go-public-and-symmetric-key-the-best-of-both-worlds-ecies-180f71eebf59
 
-func TestECIES(t *testing.T) {
+func TestECIES_P256(t *testing.T) {
 	ecKp, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatal(err)
@@ -32,6 +33,19 @@ func TestECIES(t *testing.T) {
 	if S1x.Cmp(S2x) != 0 || S1y.Cmp(S2y) != 0 {
 		t.Fatal("shared secrets aren't equals")
 	}
+
+}
+
+func TestECIES_ed25519(t *testing.T) {
+	edPub, edPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signature := ed25519.Sign(edPriv, []byte("Hello"))
+	t.Logf("Signature: %v", signature)
+
+	ok := ed25519.Verify(edPub, []byte("Hello"), signature)
+	t.Logf("Signature valid: %v", ok)
 
 }
 

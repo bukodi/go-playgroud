@@ -23,6 +23,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/jinzhu/gorm v1.9.16
+	github.com/kennylevinsen/ecies v0.0.0-20161018215922-13bce3c5d086
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c
 	github.com/kr/pretty v0.1.0
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
@@ -43,6 +44,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tobischo/gokeepasslib v1.0.0
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
+	go.dedis.ch/kyber/v3 v3.0.13
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0
