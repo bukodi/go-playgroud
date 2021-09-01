@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"io"
 	"math/big"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestECIES(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rnd, err := randomBigInt()
+	rnd, err := randFieldElement(ecKp.Curve, rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,18 +29,27 @@ func TestECIES(t *testing.T) {
 
 	t.Logf("S1 = %+v, %+v", S1x.Bytes(), S1y.Bytes())
 	t.Logf("S2 = %+v, %+v", S2x.Bytes(), S2y.Bytes())
+	if S1x.Cmp(S2x) != 0 || S1y.Cmp(S2y) != 0 {
+		t.Fatal("shared secrets aren't equals")
+	}
 
 }
 
-func randomBigInt() (*big.Int, error) {
-	//Max random value, a 130-bits integer, i.e 2^130 - 1
-	max := new(big.Int)
-	max.Exp(big.NewInt(2), big.NewInt(130), nil).Sub(max, big.NewInt(1))
+var one = new(big.Int).SetInt64(1)
 
-	//Generate cryptographically strong pseudo-random between 0 - max
-	n, err := rand.Int(rand.Reader, max)
+// randFieldElement returns a random element of the field underlying the given
+// curve using the procedure given in [NSA] A.2.1.
+func randFieldElement(c elliptic.Curve, rand io.Reader) (k *big.Int, err error) {
+	params := c.Params()
+	b := make([]byte, params.BitSize/8+8)
+	_, err = io.ReadFull(rand, b)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return n, nil
+
+	k = new(big.Int).SetBytes(b)
+	n := new(big.Int).Sub(params.N, one)
+	k.Mod(k, n)
+	k.Add(k, one)
+	return
 }
