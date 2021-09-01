@@ -16,7 +16,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emicklei/go-restful-openapi v1.4.1
-	github.com/ethereum/go-ethereum v1.10.1
+	github.com/ethereum/go-ethereum v1.10.8
 	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 	github.com/getlantern/systray v1.1.0
 	github.com/go-ldap/ldif v0.0.0-20200320164324-fd88d9b715b3
@@ -40,6 +40,7 @@ require (
 	github.com/sf1/go-card v1.0.4
 	github.com/sirupsen/logrus v1.8.1
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tobischo/gokeepasslib v1.0.0
