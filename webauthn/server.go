@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kr/pretty"
 	"log"
 	"net/http"
 	"strings"
@@ -73,6 +74,7 @@ func BeginRegistration(w http.ResponseWriter, r *http.Request) {
 
 	registerOptions := func(credCreationOpts *protocol.PublicKeyCredentialCreationOptions) {
 		credCreationOpts.CredentialExcludeList = user.CredentialExcludeList()
+		credCreationOpts.Attestation = protocol.PreferDirectAttestation
 	}
 
 	// generate PublicKeyCredentialCreationOptions, session data
@@ -127,6 +129,8 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	pretty.Printf("-- After Finish regristration ---\n Credential: %+v", credential)
 
 	user.AddCredential(*credential)
 
