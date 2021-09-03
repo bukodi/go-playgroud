@@ -10,8 +10,20 @@ import (
 	"testing"
 )
 
+var fakeRand = new(fakeRandType)
+
+type fakeRandType struct {
+}
+
+func (fr *fakeRandType) Read(p []byte) (n int, err error) {
+	for i := 0; i < len(p); i++ {
+		p[i] = 0
+	}
+	return len(p), nil
+}
+
 func TestECIES_xcrypto(t *testing.T) {
-	edPub, edPriv, err := ed25519.GenerateKey(rand.Reader)
+	edPub, edPriv, err := ed25519.GenerateKey(fakeRand)
 
 	rnd := make([]byte, 32)
 	_, err = io.ReadFull(rand.Reader, rnd)

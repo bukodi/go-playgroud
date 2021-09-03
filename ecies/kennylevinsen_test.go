@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
+	"golang.org/x/crypto/ed25519"
 	"testing"
 
 	_ "github.com/kennylevinsen/ecies"
@@ -14,59 +15,85 @@ import (
 // original : https://github.com/kennylevinsen/ecies
 
 func Encrypt(plainText, publicKey []byte) ([]byte, error) {
-	var r, R, S, K_B [32]byte
+	var rndScalar [32]byte
 
-	if _, err := rand.Read(r[:]); err != nil {
+	if _, err := rand.Read(rndScalar[:]); err != nil {
 		return nil, err
 	}
-	r[0] &= 248
-	r[31] &= 127
-	r[31] |= 64
+	rndScalar[0] &= 248
+	rndScalar[31] &= 127
+	rndScalar[31] |= 64
 
-	copy(K_B[:], publicKey)
-
-	curve25519.ScalarBaseMult(&R, &r)
-	curve25519.ScalarMult(&S, &r, &K_B)
-	k_E := sha512.Sum512(S[:])
+	rndPoint, err := curve25519.X25519(rndScalar[:], curve25519.Basepoint)
+	if err != nil {
+		return nil, err
+	}
+	sharedSecret, err := curve25519.X25519(rndScalar[:], publicKey)
+	if err != nil {
+		return nil, err
+	}
+	digest := sha512.Sum512(sharedSecret)
 
 	cipherText := make([]byte, 32+len(plainText))
-	copy(cipherText[:32], R[:])
+	copy(cipherText[:32], rndPoint[:])
 	for i := 0; i < len(plainText); i++ {
-		cipherText[32+i] = plainText[i] ^ k_E[i]
+		cipherText[32+i] = plainText[i] ^ digest[i]
 	}
 
 	return cipherText, nil
 }
 
 func Decrypt(cipherText, privateKey []byte) ([]byte, error) {
-	var R, S, k_B [32]byte
-	copy(R[:], cipherText[:32])
-	copy(k_B[:], privateKey)
+	sharedSecret, err := curve25519.X25519(privateKey, cipherText[:32])
+	if err != nil {
+		return nil, err
+	}
 
-	curve25519.ScalarMult(&S, &k_B, &R)
-
-	k_E := sha512.Sum512(S[:])
+	digest := sha512.Sum512(sharedSecret[:])
 
 	plainText := make([]byte, len(cipherText)-32)
 	for i := 0; i < len(plainText); i++ {
-		plainText[i] = cipherText[32+i] ^ k_E[i]
+		plainText[i] = cipherText[32+i] ^ digest[i]
 	}
 
 	return plainText, nil
 }
 
+func TestBoth(t *testing.T) {
+
+	t.Run("keygen", TestKeyGen)
+	t.Run("normal", TestEncrypt)
+	t.Run("failed", TestEncrypt2)
+}
+
+func TestKeyGen(t *testing.T) {
+	edPub, edPriv, _ := ed25519.GenerateKey(fakeRand)
+	privKey := scalarFromSeed([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	pubKey, _ := curve25519.X25519(privKey, curve25519.Basepoint)
+	var pubKey2 [32]byte
+	var privTmp [32]byte
+	copy(privTmp[:], privKey)
+	curve25519.ScalarBaseMult(&pubKey2, &privTmp)
+	t.Logf("privKey=%+v", privKey)
+	t.Logf("pubKey=%+v", pubKey)
+	t.Logf("pubKey2=%+v", pubKey2)
+
+	t.Logf("edPriv=%+v", scalarFromSeed(edPriv.Seed()))
+	t.Logf("edPub=%+v", edPub)
+
+}
+
 func TestEncrypt(t *testing.T) {
-	var privKey, pubKey [32]byte
+	privKey := []byte{175, 34, 224, 240, 87, 185, 220, 205, 75, 27, 229, 206, 119, 226, 231, 213, 87, 181, 121, 112, 181, 38, 122, 144, 245, 121, 96, 146, 74, 135, 241, 6}
+	//privKey := []byte{57,132,30,233,176,214,200,247,124,41,25,23,100,18,99,193,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,15}
+	//privKey := []byte{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+	//privKey[0] &= 248
+	//privKey[31] &= 127
+	//privKey[31] |= 64
 
-	if _, err := rand.Read(privKey[:]); err != nil {
-		t.Fatalf("could not generate privkey: %v", err)
-	}
-
-	privKey[0] &= 248
-	privKey[31] &= 127
-	privKey[31] |= 64
-
-	curve25519.ScalarBaseMult(&pubKey, &privKey)
+	t.Logf("privKey=%+v", privKey)
+	pubKey, _ := curve25519.X25519(privKey, curve25519.Basepoint)
+	t.Logf("pubKey=%+v", pubKey)
 
 	plainText := []byte("Hej, mit navn er Per. Jeg kan godt lide ost.")
 
@@ -83,6 +110,35 @@ func TestEncrypt(t *testing.T) {
 	if bytes.Compare(plainText, plainText2) != 0 {
 		t.Fatalf("result did not match:\nGot:\n%s\nExpected:\n%s\n", hex.Dump(plainText2), hex.Dump(plainText))
 	}
+}
+
+func TestEncrypt2(t *testing.T) {
+	edPub, edPriv, _ := ed25519.GenerateKey(fakeRand)
+	h := sha512.Sum512(edPriv.Seed())
+	privKey := setBytesWithClamping(h[:32])
+	t.Logf("privKey=%+v", privKey)
+	t.Logf("pubKey=%+v", edPub)
+
+	plainText := []byte("Hej, mit navn er Per. Jeg kan godt lide ost.")
+
+	cipherText, err := Encrypt(plainText, edPub)
+	if err != nil {
+		t.Fatalf("got error: %v", err)
+	}
+
+	plainText2, err := Decrypt(cipherText, privKey)
+	if err != nil {
+		t.Fatalf("got error: %v", err)
+	}
+
+	if bytes.Compare(plainText, plainText2) != 0 {
+		t.Fatalf("result did not match:\nGot:\n%s\nExpected:\n%s\n", hex.Dump(plainText2), hex.Dump(plainText))
+	}
+}
+
+func scalarFromSeed(edPriv ed25519.PrivateKey) []byte {
+	h := sha512.Sum512(edPriv.Seed())
+	return setBytesWithClamping(h[:32])
 }
 
 func TestDecrypt(t *testing.T) {

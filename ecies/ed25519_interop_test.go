@@ -1,8 +1,8 @@
 package ecies
 
 import (
+	"bytes"
 	stdEd25519 "crypto/ed25519"
-	"crypto/rand"
 	xEd25519 "golang.org/x/crypto/ed25519"
 	"testing"
 )
@@ -10,8 +10,10 @@ import (
 func TestEd25519Interoperability(t *testing.T) {
 	msg := []byte("Hello")
 
-	stdEdPub, stdEdPriv, _ := stdEd25519.GenerateKey(rand.Reader)
-	xEdPub, xEdPriv, _ := xEd25519.GenerateKey(rand.Reader)
+	bytes.NewBuffer([]byte{0, 1})
+
+	stdEdPub, stdEdPriv, _ := stdEd25519.GenerateKey(fakeRand)
+	xEdPub, xEdPriv, _ := xEd25519.GenerateKey(fakeRand)
 
 	stdImpPriv := stdEd25519.NewKeyFromSeed(xEdPriv.Seed())
 	xImpPriv := xEd25519.NewKeyFromSeed(stdEdPriv.Seed())
