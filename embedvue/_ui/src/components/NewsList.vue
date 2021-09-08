@@ -18,9 +18,9 @@
                 <v-flex xs3>
                   <v-img
                     contain
-                    :src="`/thumbnails/${newsArticle.baseImageName}.png`"
-                    :srcset="`/thumbnails/${newsArticle.baseImageName}.png 1x,
-                             /thumbnails/${newsArticle.baseImageName}@2x.png 2x`"
+                    :src="`./thumbnails/${newsArticle.baseImageName}.png`"
+                    :srcset="`./thumbnails/${newsArticle.baseImageName}.png 1x,
+                             ./thumbnails/${newsArticle.baseImageName}@2x.png 2x`"
                     height="72px"
                     transition="false"
                   ></v-img>
