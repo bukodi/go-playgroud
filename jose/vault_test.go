@@ -12,8 +12,8 @@ import (
 
 func TestVault(t *testing.T) {
 
-	pswCallback := func(hint string) string {
-		return "Passw0rd"
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
 	}
 	// Generate a public/private key pair to use for this example.
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -44,9 +44,7 @@ func TestVault(t *testing.T) {
 	}
 }
 
-type PwsCallback func(hint string) string
-
-func Encrypt(data []byte, pswCallback PwsCallback, backupPublic *ecdsa.PublicKey) (string, error) {
+func Encrypt(data []byte, pswCallback PswCallback, backupPublic *ecdsa.PublicKey) (string, error) {
 
 	encrypter, err := jose.NewMultiEncrypter(jose.A128GCM, []jose.Recipient{
 		{Algorithm: jose.PBES2_HS256_A128KW, Key: pswCallback("")},
@@ -64,7 +62,7 @@ func Encrypt(data []byte, pswCallback PwsCallback, backupPublic *ecdsa.PublicKey
 	return object.FullSerialize(), nil
 }
 
-func Decrypt(cipherText string, pswCallback PwsCallback) ([]byte, error) {
+func Decrypt(cipherText string, pswCallback PswCallback) ([]byte, error) {
 	// Parse the serialized, encrypted JWE object. An error would indicate that
 	// the given input did not represent a valid message.
 	object, err := jose.ParseEncrypted(cipherText)
@@ -73,6 +71,20 @@ func Decrypt(cipherText string, pswCallback PwsCallback) ([]byte, error) {
 	}
 
 	_, _, decrypted, err := object.DecryptMulti(pswCallback(""))
+	return decrypted, err
+}
+
+func DecryptWithMemoizerPBE(cipherText string, pswCallback PswCallback) ([]byte, error) {
+	// Parse the serialized, encrypted JWE object. An error would indicate that
+	// the given input did not represent a valid message.
+	object, err := jose.ParseEncrypted(cipherText)
+	if err != nil {
+		return nil, err
+	}
+
+	mcpd := &myCachingPBEDecrypter{pswCallback}
+
+	_, _, decrypted, err := object.DecryptMulti(mcpd)
 	return decrypted, err
 }
 
@@ -89,8 +101,8 @@ func DecryptWithBackup(cipherText string, backupKey *ecdsa.PrivateKey) ([]byte, 
 }
 
 func BenchmarkPasswordDec(b *testing.B) {
-	pswCallback := func(hint string) string {
-		return "Passw0rd"
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
 	}
 	// Generate a public/private key pair to use for this example.
 	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -103,9 +115,48 @@ func BenchmarkPasswordDec(b *testing.B) {
 	}
 }
 
+func BenchmarkCacheablePasswordDec(b *testing.B) {
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
+	}
+	// Generate a public/private key pair to use for this example.
+	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+
+	var data = []byte("Lorem ipsum dolor sit amet")
+	encText, _ := Encrypt(data, pswCallback, &privateKey.PublicKey)
+
+	for n := 0; n < 5; n++ {
+		_, err := DecryptWithMemoizerPBE(encText, pswCallback)
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+	}
+}
+
+//func TestMemoizerPBE(t *testing.T) {
+func BenchmarkMemoizerPBE(t *testing.B) {
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
+	}
+	// Generate a public/private key pair to use for this example.
+	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+
+	var data = []byte("Lorem ipsum dolor sit amet")
+	encText, _ := Encrypt(data, pswCallback, &privateKey.PublicKey)
+
+	for n := 0; n < t.N; n++ {
+		plaintext, err := DecryptWithMemoizerPBE(encText, pswCallback)
+		if err != nil {
+			t.Fatalf("%+v", err)
+		} else {
+			t.Logf("%s", plaintext)
+		}
+	}
+}
+
 func BenchmarkECCDec(b *testing.B) {
-	pswCallback := func(hint string) string {
-		return "Passw0rd"
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
 	}
 	// Generate a public/private key pair to use for this example.
 	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

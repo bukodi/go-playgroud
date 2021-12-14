@@ -1,21 +1,44 @@
 package jose
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 	"gopkg.in/square/go-jose.v2"
 	josecipher "gopkg.in/square/go-jose.v2/cipher"
 	"hash"
+	"sync"
 	"testing"
 )
 
+type pbkdf2CacheEntry struct {
+	derivedKey []byte
+	pswCtx     context.Context
+}
+
+func pbkdf2ParamsHash(password, salt []byte, iter, keyLen int, h func() hash.Hash) string {
+	var buff bytes.Buffer
+	w := bufio.NewWriter(&buff)
+	w.Write(password)
+	w.Write(salt)
+	binary.Write(w, binary.LittleEndian, iter)
+	binary.Write(w, binary.LittleEndian, keyLen)
+	summ := h().Sum(buff.Bytes())
+	return base64.RawStdEncoding.EncodeToString(summ)
+}
+
+var pbkdf2Cache = make(map[string]*pbkdf2CacheEntry)
+var pbkdf2CacheLock sync.RWMutex
+
 type myCachingPBEDecrypter struct {
-	password string
+	pswCallback PswCallback
 }
 
 func readP2S(p2sIf interface{}) ([]byte, error) {
@@ -67,10 +90,21 @@ func (cpd *myCachingPBEDecrypter) DecryptKey(encryptedKey []byte, header jose.He
 
 	// derive key
 	keyLen, h := getPbkdf2Params(alg)
-	key := pbkdf2.Key(encryptedKey, salt, p2c, keyLen, h)
+	password := cpd.pswCallback("")
+	pbkdf2ParamsHash := pbkdf2ParamsHash(password, salt, p2c, keyLen, h)
+	pbkdf2CacheLock.RLock()
+	ce := pbkdf2Cache[pbkdf2ParamsHash]
+	pbkdf2CacheLock.RUnlock()
+	if ce == nil {
+		key := pbkdf2.Key(password, salt, p2c, keyLen, h)
+		ce = &pbkdf2CacheEntry{key, nil}
+		pbkdf2CacheLock.Lock()
+		pbkdf2Cache[pbkdf2ParamsHash] = ce
+		pbkdf2CacheLock.Unlock()
+	}
 
 	// use AES cipher with derived key
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(ce.derivedKey)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +114,6 @@ func (cpd *myCachingPBEDecrypter) DecryptKey(encryptedKey []byte, header jose.He
 		return nil, err
 	}
 	return cek, nil
-
 }
 
 // getPbkdf2Params returns the key length and hash function used in
@@ -112,7 +145,7 @@ func TestJWEPBEForOpaque(t *testing.T) {
 	}
 
 	serialized := object.FullSerialize()
-	fmt.Printf("Serialized message: %s\n", serialized)
+	fmt.Printf("Serialized message: %q\n", serialized)
 
 	object, err = jose.ParseEncrypted(serialized)
 	if err != nil {
@@ -121,16 +154,53 @@ func TestJWEPBEForOpaque(t *testing.T) {
 
 	object.GetAuthData()
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		decrypted1, err := object.Decrypt("Passw0rd")
+		if err != nil {
+			t.Error(err)
+		} else {
+			t.Logf("Decrypted1: %s", string(decrypted1))
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		pswCallBack := NewPswCallback("Passw0rd")
+		mcpd := &myCachingPBEDecrypter{pswCallBack}
+		decrypted2, err := object.Decrypt(mcpd)
+		if err != nil {
+			t.Error(err)
+		} else {
+			t.Logf("Decrypted2: %s", string(decrypted2))
+		}
+		wg.Done()
+	}()
+	wg.Wait()
+}
+
+const testJWE = "{\"protected\":\"eyJhbGciOiJQQkVTMi1IUzI1NitBMTI4S1ciLCJlbmMiOiJBMTI4R0NNIiwicDJjIjoxMDAwMDAsInAycyI6IlFCSXdEX21DaVpTUFgtcndFclpQY2cifQ\",\"encrypted_key\":\"WBgaIeo37t5MHlToLBQPqFcbFxVwSCbB\",\"iv\":\"JvMtYv-A82A9MPd1\",\"ciphertext\":\"7xpWzNkzI2dXW1XPJ4x5rboH2Ap30k7VAbk\",\"tag\":\"A6Dw_EqJmUKkq84IMZcQiw\"}"
+
+func TestPDEDecrypter(t *testing.T) {
+	object, _ := jose.ParseEncrypted(testJWE)
 	decrypted1, err := object.Decrypt("Passw0rd")
 	if err != nil {
-		panic(err)
+		t.Error(err)
+	} else {
+		t.Logf("Decrypted1: %s", string(decrypted1))
 	}
-	fmt.Printf("Decrypted: %s\n", string(decrypted1))
 
-	mcpd := &myCachingPBEDecrypter{"Passw0rd"}
+}
+
+func TestOpaqueDecrypter(t *testing.T) {
+	object, _ := jose.ParseEncrypted(testJWE)
+	pswCallBack := NewPswCallback("Passw0rd")
+	mcpd := &myCachingPBEDecrypter{pswCallBack}
 	decrypted2, err := object.Decrypt(mcpd)
 	if err != nil {
-		panic(err)
+		t.Error(err)
+	} else {
+		t.Logf("Decrypted2: %s", string(decrypted2))
 	}
-	fmt.Printf("Decrypted: %s\n", string(decrypted2))
 }
