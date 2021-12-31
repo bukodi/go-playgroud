@@ -19,6 +19,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.8
 	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 	github.com/getlantern/systray v1.1.0
+	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/go-ldap/ldif v0.0.0-20200320164324-fd88d9b715b3
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -48,6 +49,5 @@ require (
 	go.dedis.ch/kyber/v3 v3.0.13
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )

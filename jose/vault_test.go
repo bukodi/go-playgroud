@@ -5,10 +5,10 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"gopkg.in/square/go-jose.v2"
-	_ "gopkg.in/square/go-jose.v2"
+	"sync"
 	"testing"
 )
+import "github.com/go-jose/go-jose/v3"
 
 func TestVault(t *testing.T) {
 
@@ -110,6 +110,7 @@ func BenchmarkPasswordDec(b *testing.B) {
 	var data = []byte("Lorem ipsum dolor sit amet")
 	encText, _ := Encrypt(data, pswCallback, &privateKey.PublicKey)
 	// run the Fib function b.N times
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		Decrypt(encText, pswCallback)
 	}
@@ -124,8 +125,8 @@ func BenchmarkCacheablePasswordDec(b *testing.B) {
 
 	var data = []byte("Lorem ipsum dolor sit amet")
 	encText, _ := Encrypt(data, pswCallback, &privateKey.PublicKey)
-
-	for n := 0; n < 5; n++ {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
 		_, err := DecryptWithMemoizerPBE(encText, pswCallback)
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -133,7 +134,34 @@ func BenchmarkCacheablePasswordDec(b *testing.B) {
 	}
 }
 
-//func TestMemoizerPBE(t *testing.T) {
+func TestMemoizerPBE(t *testing.T) {
+	pswCallback := func(hint string) []byte {
+		return []byte("Passw0rd")
+	}
+	// Generate a public/private key pair to use for this example.
+	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+
+	var data = []byte("Lorem ipsum dolor sit amet")
+	encText, _ := Encrypt(data, pswCallback, &privateKey.PublicKey)
+
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for m := 0; m < 10; m++ {
+		go func() {
+			for n := 0; n < 10; n++ {
+				plaintext, err := DecryptWithMemoizerPBE(encText, pswCallback)
+				if err != nil {
+					t.Fatalf("%+v", err)
+				} else {
+					t.Logf("%s", plaintext)
+				}
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
 func BenchmarkMemoizerPBE(t *testing.B) {
 	pswCallback := func(hint string) []byte {
 		return []byte("Passw0rd")

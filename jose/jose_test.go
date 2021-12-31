@@ -9,7 +9,7 @@ import (
 	"io"
 	"testing"
 )
-import "gopkg.in/square/go-jose.v2"
+import "github.com/go-jose/go-jose/v3"
 
 func TestJWEMulti2(t *testing.T) {
 	// Generate a public/private key pair to use for this example.

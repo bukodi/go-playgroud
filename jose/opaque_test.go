@@ -5,18 +5,19 @@ import (
 	"bytes"
 	"context"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"golang.org/x/crypto/pbkdf2"
-	"gopkg.in/square/go-jose.v2"
-	josecipher "gopkg.in/square/go-jose.v2/cipher"
 	"hash"
 	"sync"
 	"testing"
 )
+import "github.com/go-jose/go-jose/v3"
 
 type pbkdf2CacheEntry struct {
 	derivedKey []byte
@@ -92,6 +93,7 @@ func (cpd *myCachingPBEDecrypter) DecryptKey(encryptedKey []byte, header jose.He
 	keyLen, h := getPbkdf2Params(alg)
 	password := cpd.pswCallback("")
 	pbkdf2ParamsHash := pbkdf2ParamsHash(password, salt, p2c, keyLen, h)
+	fmt.Printf("Search in cache: %s\n", pbkdf2ParamsHash)
 	pbkdf2CacheLock.RLock()
 	ce := pbkdf2Cache[pbkdf2ParamsHash]
 	pbkdf2CacheLock.RUnlock()
@@ -100,7 +102,10 @@ func (cpd *myCachingPBEDecrypter) DecryptKey(encryptedKey []byte, header jose.He
 		ce = &pbkdf2CacheEntry{key, nil}
 		pbkdf2CacheLock.Lock()
 		pbkdf2Cache[pbkdf2ParamsHash] = ce
+		fmt.Printf("Added to cache: %s->%+v\n", pbkdf2ParamsHash, ce.derivedKey)
 		pbkdf2CacheLock.Unlock()
+	} else {
+		fmt.Printf("Found in cache: %s->%+v\n", pbkdf2ParamsHash, ce.derivedKey)
 	}
 
 	// use AES cipher with derived key
@@ -109,11 +114,56 @@ func (cpd *myCachingPBEDecrypter) DecryptKey(encryptedKey []byte, header jose.He
 		return nil, err
 	}
 
-	cek, err := josecipher.KeyUnwrap(block, encryptedKey)
+	cek, err := keyUnwrap(block, encryptedKey)
 	if err != nil {
 		return nil, err
 	}
 	return cek, nil
+}
+
+var defaultIV = []byte{0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6}
+
+// KeyUnwrap implements NIST key unwrapping; it unwraps a content encryption key (cek) with the given block cipher.
+func keyUnwrap(block cipher.Block, ciphertext []byte) ([]byte, error) {
+	if len(ciphertext)%8 != 0 {
+		return nil, fmt.Errorf("square/go-jose: key wrap input must be 8 byte blocks")
+	}
+
+	n := (len(ciphertext) / 8) - 1
+	r := make([][]byte, n)
+
+	for i := range r {
+		r[i] = make([]byte, 8)
+		copy(r[i], ciphertext[(i+1)*8:])
+	}
+
+	buffer := make([]byte, 16)
+	tBytes := make([]byte, 8)
+	copy(buffer[:8], ciphertext[:8])
+
+	for t := 6*n - 1; t >= 0; t-- {
+		binary.BigEndian.PutUint64(tBytes, uint64(t+1))
+
+		for i := 0; i < 8; i++ {
+			buffer[i] = buffer[i] ^ tBytes[i]
+		}
+		copy(buffer[8:], r[t%n])
+
+		block.Decrypt(buffer, buffer)
+
+		copy(r[t%n], buffer[8:])
+	}
+
+	if subtle.ConstantTimeCompare(buffer[:8], defaultIV) == 0 {
+		return nil, fmt.Errorf("square/go-jose: failed to unwrap key")
+	}
+
+	out := make([]byte, n*8)
+	for i := range r {
+		copy(out[i*8:], r[i])
+	}
+
+	return out, nil
 }
 
 // getPbkdf2Params returns the key length and hash function used in
