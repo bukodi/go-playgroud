@@ -1,6 +1,6 @@
 module github.com/bukodi/go-playground
 
-go 1.16
+go 1.17
 
 require (
 	github.com/InfiniteLoopSpace/go_S-MIME v0.0.0-20181221134359-3f58f9a4b2b6
@@ -9,10 +9,8 @@ require (
 	github.com/alexbrainman/sspi v0.0.0-20210105120005-909beea2cc74
 	github.com/andlabs/ui v0.0.0-20200610043537-70a69d6ae31e
 	github.com/bukodi/go-playgroud v0.0.0-20210403211403-88928ed6657c
+	github.com/codenotary/immudb v1.2.1
 	github.com/disintegration/imaging v1.6.2
-	github.com/duo-labs/webauthn v0.0.0-20210727191636-9f1b88ef44cc
-	github.com/duo-labs/webauthn.io v0.0.0-20200929144140-c031a3e0f95d
-	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emicklei/go-restful-openapi v1.4.1
@@ -26,7 +24,6 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/kennylevinsen/ecies v0.0.0-20161018215922-13bce3c5d086
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c
-	github.com/kr/pretty v0.1.0
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/matryer/filedb v0.0.0-20141103144311-3641db67a8c9
@@ -41,13 +38,12 @@ require (
 	github.com/sf1/go-card v1.0.4
 	github.com/sirupsen/logrus v1.8.1
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
-	github.com/spf13/cobra v1.1.1 // indirect
-	github.com/spf13/viper v1.7.1
+	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tobischo/gokeepasslib v1.0.0
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
 	go.dedis.ch/kyber/v3 v3.0.13
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
