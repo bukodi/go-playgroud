@@ -15,7 +15,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emicklei/go-restful-openapi v1.4.1
-	github.com/ethereum/go-ethereum v1.10.8
+	github.com/ethereum/go-ethereum v1.10.17
 	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 	github.com/getlantern/systray v1.1.0
 	github.com/go-chi/chi/v5 v5.0.0
@@ -57,9 +57,11 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/chris-ramon/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect
@@ -115,7 +117,7 @@ require (
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
